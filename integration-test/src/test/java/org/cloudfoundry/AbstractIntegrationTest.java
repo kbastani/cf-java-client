@@ -32,7 +32,6 @@ import org.cloudfoundry.operations.util.v2.Paginated;
 import org.cloudfoundry.operations.util.v2.Resources;
 import org.cloudfoundry.utils.test.TestSubscriber;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
@@ -82,28 +81,32 @@ public abstract class AbstractIntegrationTest {
 
     @Value("${test.username}")
     protected String testUsername;
-
-    @Before
+    
     public final void cleanup() throws Exception {
-        cleanupApplications(this.cloudFoundryClient)
-                .after(() -> cleanupRoutes(this.cloudFoundryClient))
-                .after(() -> cleanupDomains(this.cloudFoundryClient))
-                .after(() -> cleanupSpaces(this.cloudFoundryClient, this.spaceId))
-                .after(() -> cleanupOrganizations(this.cloudFoundryClient, this.organizationId))
+        cleanupAllApplications(this.cloudFoundryClient)
+                .after(() -> cleanupAllRoutes(this.cloudFoundryClient))
+                .after(() -> cleanupExtraDomains(this.cloudFoundryClient))
+                .after(() -> cleanupExtraSpaces(this.cloudFoundryClient, this.spaceId))
+                .after(() -> cleanupExtraOrganizations(this.cloudFoundryClient, this.organizationId))
                 .doOnSubscribe(s -> this.logger.debug(">> CLEANUP <<"))
                 .doOnComplete(() -> this.logger.debug("<< CLEANUP >>"))
                 .after()
                 .get();
     }
 
-    @After
     public final void verify() throws InterruptedException {
         this.testSubscriber.verify(25, SECONDS);
     }
 
+    @After
+    public final void verifyAndCleanup() throws Exception {
+        verify();
+        cleanup();
+    }
+
     protected final <T> void assertTupleEquality(Tuple2<T, T> tuple) {
-        T actual = tuple.t1;
-        T expected = tuple.t2;
+        T expected = tuple.t1;
+        T actual = tuple.t2;
 
         assertEquals(expected, actual);
     }
@@ -113,7 +116,7 @@ public abstract class AbstractIntegrationTest {
         return (TestSubscriber<T>) this.testSubscriber;
     }
 
-    private static Stream<Void> cleanupApplications(CloudFoundryClient cloudFoundryClient) {
+    private static Stream<Void> cleanupAllApplications(CloudFoundryClient cloudFoundryClient) {
         return Paginated
                 .requestResources(page -> {
                     ListApplicationsRequest request = ListApplicationsRequest.builder()
@@ -131,7 +134,25 @@ public abstract class AbstractIntegrationTest {
                 });
     }
 
-    private static Stream<Void> cleanupDomains(CloudFoundryClient cloudFoundryClient) {
+    private static Stream<Void> cleanupAllRoutes(CloudFoundryClient cloudFoundryClient) {
+        return Paginated
+                .requestResources(page -> {
+                    ListRoutesRequest request = ListRoutesRequest.builder()
+                            .page(page)
+                            .build();
+
+                    return cloudFoundryClient.routes().list(request);
+                })
+                .flatMap(response -> {
+                    DeleteRouteRequest request = DeleteRouteRequest.builder()
+                            .id(Resources.getId(response))
+                            .build();
+
+                    return cloudFoundryClient.routes().delete(request);
+                });
+    }
+
+    private static Stream<Void> cleanupExtraDomains(CloudFoundryClient cloudFoundryClient) {
         return Paginated
                 .requestResources(page -> {
                     ListDomainsRequest request = ListDomainsRequest.builder()
@@ -153,7 +174,7 @@ public abstract class AbstractIntegrationTest {
                 });
     }
 
-    private static Stream<Void> cleanupOrganizations(CloudFoundryClient cloudFoundryClient, Mono<String> defaultOrganizationId) {
+    private static Stream<Void> cleanupExtraOrganizations(CloudFoundryClient cloudFoundryClient, Mono<String> defaultOrganizationId) {
         return Paginated
                 .requestResources(page -> {
                     ListOrganizationsRequest request = ListOrganizationsRequest.builder()
@@ -180,25 +201,7 @@ public abstract class AbstractIntegrationTest {
                 });
     }
 
-    private static Stream<Void> cleanupRoutes(CloudFoundryClient cloudFoundryClient) {
-        return Paginated
-                .requestResources(page -> {
-                    ListRoutesRequest request = ListRoutesRequest.builder()
-                            .page(page)
-                            .build();
-
-                    return cloudFoundryClient.routes().list(request);
-                })
-                .flatMap(response -> {
-                    DeleteRouteRequest request = DeleteRouteRequest.builder()
-                            .id(Resources.getId(response))
-                            .build();
-
-                    return cloudFoundryClient.routes().delete(request);
-                });
-    }
-
-    private static Stream<Void> cleanupSpaces(CloudFoundryClient cloudFoundryClient, Mono<String> defaultSpaceId) {
+    private static Stream<Void> cleanupExtraSpaces(CloudFoundryClient cloudFoundryClient, Mono<String> defaultSpaceId) {
         return Paginated
                 .requestResources(page -> {
                     ListSpacesRequest request = ListSpacesRequest.builder()

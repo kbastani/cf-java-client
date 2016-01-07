@@ -42,7 +42,7 @@ public final class TestSubscriber<T> implements Subscriber<T> {
 
     private final CountDownLatch latch = new CountDownLatch(1);
 
-    private Integer countExpectation;
+    private volatile Integer countExpectation;
 
     private volatile Throwable errorActual;
 
@@ -52,9 +52,13 @@ public final class TestSubscriber<T> implements Subscriber<T> {
 
     private long startTime;
 
-    public TestSubscriber<T> assertCount(Integer expected) {
-        this.countExpectation = expected;
+    public TestSubscriber<T> assertCount(int count) {
+        this.countExpectation = count;
         return this;
+    }
+
+    public TestSubscriber<T> assertEmpty() {
+        return this.assertCount(0);
     }
 
     public TestSubscriber<T> assertEquals(final T expected) {
