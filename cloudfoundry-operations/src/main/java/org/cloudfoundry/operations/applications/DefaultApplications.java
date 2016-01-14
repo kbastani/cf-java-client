@@ -25,6 +25,7 @@ import org.cloudfoundry.client.v2.applications.ApplicationStatisticsRequest;
 import org.cloudfoundry.client.v2.applications.ApplicationStatisticsResponse;
 import org.cloudfoundry.client.v2.applications.SummaryApplicationRequest;
 import org.cloudfoundry.client.v2.applications.SummaryApplicationResponse;
+import org.cloudfoundry.client.v2.applications.UpdateApplicationRequest;
 import org.cloudfoundry.client.v2.routes.Route;
 import org.cloudfoundry.client.v2.spaces.GetSpaceSummaryRequest;
 import org.cloudfoundry.client.v2.spaces.GetSpaceSummaryResponse;
@@ -33,8 +34,12 @@ import org.cloudfoundry.client.v2.spaces.ListSpaceApplicationsResponse;
 import org.cloudfoundry.client.v2.spaces.SpaceApplicationSummary;
 import org.cloudfoundry.client.v2.stacks.GetStackRequest;
 import org.cloudfoundry.client.v2.stacks.GetStackResponse;
+import org.cloudfoundry.client.v2.stacks.ListStacksRequest;
+import org.cloudfoundry.client.v2.stacks.ListStacksResponse;
 import org.cloudfoundry.operations.util.Dates;
+import org.cloudfoundry.operations.util.Exceptions;
 import org.cloudfoundry.operations.util.Optional;
+import org.cloudfoundry.operations.util.Optionals;
 import org.cloudfoundry.operations.util.Validators;
 import org.cloudfoundry.operations.util.v2.Paginated;
 import org.cloudfoundry.operations.util.v2.Resources;
@@ -86,26 +91,55 @@ public final class DefaultApplications implements Applications {
     public Mono<Void> push(PushApplicationRequest request) {
         Validators
                 .validate(request)
-                .then(requestStackId(this.cloudFoundryClient));
-
+                .then(requestStackId(this.cloudFoundryClient))
+                .then(createOrUpdateApplication(this.cloudFoundryClient, this.spaceId));
 
 
         // TODO
         return null;
     }
 
-    private static Function<PushApplicationRequest, Mono<Tuple2<Optional<String>, PushApplicationRequest>>> requestStackId(CloudFoundryClient cloudFoundryClient) {
-        return new Function<PushApplicationRequest, Mono<Tuple2<Optional<String>, PushApplicationRequest>>>() {
+    private static Function<Tuple2<Optional<String>, PushApplicationRequest>, Mono<Tuple2<String, PushApplicationRequest>>> createOrUpdateApplication(final CloudFoundryClient cloudFoundryClient,
+                                                                                                                                                      final Mono<String> spaceId) {
+        return new Function<Tuple2<Optional<String>, PushApplicationRequest>, Mono<Tuple2<String, PushApplicationRequest>>>() {
 
             @Override
-            public Mono<Tuple2<Optional<String>, PushApplicationRequest>> apply(PushApplicationRequest pushApplicationRequest) {
-                String stack = pushApplicationRequest.getStack();
+            public Mono<Tuple2<String, PushApplicationRequest>> apply(Tuple2<Optional<String>, PushApplicationRequest> tuple) {
+                Optional<String> stackId = tuple.t1;
+                PushApplicationRequest pushApplicationRequest = tuple.t2;
 
-                if(stack == null) {
-                    return Mono.just(Tuple.of(Optional.<String>empty(), pushApplicationRequest));
-                }
+                return spaceId
+                        .then(requestGetApplicationId(cloudFoundryClient, pushApplicationRequest.getName()))
+                        .then(requestUpdateApplicationId(cloudFoundryClient))
+                        //   .otherwiseIfEmpty(requestCreateApplicationId)
+                        .and(Mono.just(pushApplicationRequest));
+            }
+
+        };
+    }
+
+    private static Function<String, Mono<String>> requestUpdateApplicationId(CloudFoundryClient cloudFoundryClient, final PushApplicationRequest pushApplicationRequest) {
+        return new Function<String, Mono<String>>() {
+
+            @Override
+            public Mono<String> apply(String applicationId) {
+                UpdateApplicationRequest request = UpdateApplicationRequest.builder()
+                        .buildpack(pushApplicationRequest.getBuildpack())
+                        .command(pushApplicationRequest.getCommand())
+                        .diskQuota(pushApplicationRequest.getDiskLimit())
+                        .environmentJson()
+                        .healthCheckType()
+                        .id(applicationId)
+                        .instances()
+                        .memory()
+                        .stackId()
+                        .state()
+                        .build();
 
                 // TODO
+
+//                .diego(pushApplicationRequest.getDockerImage() != null)
+//                .dockerImage()
 
                 return null;
             }
@@ -159,8 +193,12 @@ public final class DefaultApplications implements Applications {
 
             @Override
             public Mono<ApplicationResource> apply(Tuple2<GetApplicationRequest, String> tuple) {
+                GetApplicationRequest getApplicationRequest = tuple.t1;
+                String spaceId = tuple.t2;
+
+
                 return Paginated
-                        .requestResources(requestListApplicationsPage(cloudFoundryClient, tuple))
+                        .requestResources(requestListApplicationsPage(cloudFoundryClient, getApplicationRequest.getName(), spaceId))
                         .single();
             }
 
@@ -183,21 +221,48 @@ public final class DefaultApplications implements Applications {
         return cloudFoundryClient.applicationsV2().summary(request);
     }
 
-    private static Function<Integer, Mono<ListSpaceApplicationsResponse>> requestListApplicationsPage(final CloudFoundryClient cloudFoundryClient, final Tuple2<GetApplicationRequest, String> tuple) {
+    private static Function<String, Mono<String>> requestGetApplicationId(final CloudFoundryClient cloudFoundryClient, final String name) {
+        return new Function<String, Mono<String>>() {
+
+            @Override
+            public Mono<String> apply(String spaceId) {
+                return Paginated
+                        .requestResources(requestListApplicationsPage(cloudFoundryClient, name, spaceId))
+                        .singleOrEmpty()
+                        .map(Resources.extractId());
+            }
+
+        };
+    }
+
+    private static Function<Integer, Mono<ListSpaceApplicationsResponse>> requestListApplicationsPage(final CloudFoundryClient cloudFoundryClient, final String name, final String spaceId) {
         return new Function<Integer, Mono<ListSpaceApplicationsResponse>>() {
 
             @Override
             public Mono<ListSpaceApplicationsResponse> apply(Integer page) {
-                GetApplicationRequest getApplicationRequest = tuple.t1;
-                String spaceId = tuple.t2;
-
                 ListSpaceApplicationsRequest request = ListSpaceApplicationsRequest.builder()
                         .id(spaceId)
-                        .name(getApplicationRequest.getName())
+                        .name(name)
                         .page(page)
                         .build();
 
                 return cloudFoundryClient.spaces().listApplications(request);
+            }
+
+        };
+    }
+
+    private static Function<Integer, Mono<ListStacksResponse>> requestListStackPage(final CloudFoundryClient cloudFoundryClient, final String stack) {
+        return new Function<Integer, Mono<ListStacksResponse>>() {
+
+            @Override
+            public Mono<ListStacksResponse> apply(Integer page) {
+                ListStacksRequest request = ListStacksRequest.builder()
+                        .name(stack)
+                        .page(page)
+                        .build();
+
+                return cloudFoundryClient.stacks().list(request);
             }
 
         };
@@ -224,6 +289,29 @@ public final class DefaultApplications implements Applications {
                 .build();
 
         return cloudFoundryClient.stacks().get(request);
+    }
+
+    private static Function<PushApplicationRequest, Mono<Tuple2<Optional<String>, PushApplicationRequest>>> requestStackId(final CloudFoundryClient cloudFoundryClient) {
+        return new Function<PushApplicationRequest, Mono<Tuple2<Optional<String>, PushApplicationRequest>>>() {
+
+            @Override
+            public Mono<Tuple2<Optional<String>, PushApplicationRequest>> apply(PushApplicationRequest pushApplicationRequest) {
+                String stack = pushApplicationRequest.getStack();
+
+                if (stack == null) {
+                    return Mono.just(Tuple.of(Optional.<String>empty(), pushApplicationRequest));
+                }
+
+                return Paginated
+                        .requestResources(requestListStackPage(cloudFoundryClient, stack))
+                        .single()
+                        .map(Resources.extractId())
+                        .map(Optionals.<String>toOptional())
+                        .and(Mono.just(pushApplicationRequest))
+                        .otherwise(Exceptions.<Tuple2<Optional<String>, PushApplicationRequest>>convert("Stack %s does not exist", stack));
+            }
+
+        };
     }
 
     private static Function<SpaceApplicationSummary, ApplicationSummary> toApplication() {

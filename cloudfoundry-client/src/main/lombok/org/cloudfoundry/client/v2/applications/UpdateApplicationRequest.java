@@ -39,6 +39,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Buildpack to build the app.
      *
+     * @param buildpack buildpack to build the app
      * @return buildpack to build the app
      */
     @Getter(onMethod = @__(@JsonProperty("buildpack")))
@@ -47,6 +48,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The command to start the app after it is staged.
      *
+     * @param command the command to start the app
      * @return the command to start the app
      */
     @Getter(onMethod = @__(@JsonProperty("command")))
@@ -55,6 +57,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Open the console port for the app (at $CONSOLE_PORT).
      *
+     * @param console whether to open the console port
      * @return whether to open the console port
      */
     @Getter(onMethod = @__({@JsonProperty("console"), @Deprecated}))
@@ -63,6 +66,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Open the debug port for the app (at $DEBUG_PORT).
      *
+     * @param debug whether to open the debug port
      * @return whether to open the debug port
      */
     @Getter(onMethod = @__({@JsonProperty("debug"), @Deprecated}))
@@ -71,6 +75,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Use diego to stage and to run when available.
      *
+     * @param diego whether to use diego
      * @return whether to use diego
      */
     @Getter(onMethod = @__(@JsonProperty("diego")))
@@ -79,6 +84,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The maximum amount of disk available to an instance of an app. In megabytes.
      *
+     * @param diskQuota the maximum amount of disk available to an instance
      * @return the maximum amount of disk available to an instance
      */
     @Getter(onMethod = @__(@JsonProperty("disk_quota")))
@@ -87,6 +93,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Docker credentials for pulling docker image.
      *
+     * @param dockerCredentialsJsons docker credentials
      * @return docker credentials
      */
     @Getter(onMethod = @__({@JsonProperty("docker_credentials_json"), @JsonInclude(NON_EMPTY)}))
@@ -95,6 +102,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Name of the Docker image containing the app.
      *
+     * @param dockerImage name of the Docker image
      * @return name of the Docker image
      */
     @Getter(onMethod = @__(@JsonProperty("docker_image")))
@@ -103,6 +111,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Key/value pairs of all the environment variables to run in your app. Does not include any system or service variables.
      *
+     * @param environmentJsons the environment variables to run in your app
      * @return the environment variables to run in your app
      */
     @Getter(onMethod = @__({@JsonProperty("environment_json"), @JsonInclude(NON_EMPTY)}))
@@ -111,6 +120,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Timeout for health checking of an staged app when starting up.
      *
+     * @param healthCheckTimeout timeout for health checking
      * @return timeout for health checking
      */
     @Getter(onMethod = @__(@JsonProperty("health_check_timeout")))
@@ -119,6 +129,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * Type of health check to perform.
      *
+     * @param healthCheckType type of health check to perform
      * @return type of health check to perform
      */
     @Getter(onMethod = @__(@JsonProperty("health_check_type")))
@@ -127,6 +138,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The guid of the App.
      *
+     * @param id the guid of the App
      * @return the guid of the App
      */
     @Getter(onMethod = @__(@JsonIgnore))
@@ -135,6 +147,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The number of instances of the app to run. To ensure optimal availability, ensure there are at least 2 instances.
      *
+     * @param instances the number of instances to run
      * @return the number of instances to run
      */
     @Getter(onMethod = @__(@JsonProperty("instances")))
@@ -143,6 +156,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The amount of memory each instance should have. In megabytes.
      *
+     * @param memory the amount of memory each instance should have
      * @return the amount of memory each instance should have
      */
     @Getter(onMethod = @__(@JsonProperty("memory")))
@@ -151,17 +165,25 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The name of the app.
      *
+     * @param name the name of the app
      * @return the name of the app
      */
     @Getter(onMethod = @__(@JsonProperty("name")))
     private final String name;
 
+    /**
+     * Is production
+     *
+     * @param production is production
+     * @return is production
+     */
     @Getter(onMethod = @__({@JsonProperty("production"), @Deprecated}))
     private final Boolean production;
 
     /**
      * The id of the associated space.
      *
+     * @param spaceId the id of the associated space
      * @return the id of the associated space
      */
     @Getter(onMethod = @__(@JsonProperty("space_guid")))
@@ -170,6 +192,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The id of the associated stack.
      *
+     * @param stackId the id of the associated stack
      * @return the id of the associated stack
      */
     @Getter(onMethod = @__(@JsonProperty("stack_guid")))
@@ -178,6 +201,7 @@ public final class UpdateApplicationRequest implements Validatable {
     /**
      * The current desired state of the app.
      *
+     * @param state the current desired state of the app
      * @return the current desired state of the app
      */
     @Getter(onMethod = @__(@JsonProperty("state")))

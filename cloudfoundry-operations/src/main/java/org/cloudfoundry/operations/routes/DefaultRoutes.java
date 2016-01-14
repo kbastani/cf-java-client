@@ -294,9 +294,9 @@ public final class DefaultRoutes implements Routes {
 
                 Mono<String> spaceId = Paginated
                         .requestResources(requestOrganizationSpaceIdPage(cloudFoundryClient, organizationId, request.getSpace()))
-                        .map(Resources.extractId())
                         .single()
-                        .otherwise(Exceptions.<String>convert(String.format("Space %s does not exist", request.getSpace())));
+                        .map(Resources.extractId())
+                        .otherwise(Exceptions.<String>convert("Space %s does not exist", request.getSpace()));
 
                 return Mono.when(spaceId, Mono.just(organizationId), Mono.just(request));
             }

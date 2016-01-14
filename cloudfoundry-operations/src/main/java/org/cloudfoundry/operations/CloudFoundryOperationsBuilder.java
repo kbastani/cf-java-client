@@ -102,7 +102,7 @@ public final class CloudFoundryOperationsBuilder {
                 .requestResources(requestOrganizationPage(cloudFoundryClient, organization))
                 .single()
                 .map(Resources.extractId())
-                .otherwise(Exceptions.<String>convert(String.format("Organization %s does not exist", organization)))
+                .otherwise(Exceptions.<String>convert("Organization %s does not exist", organization))
                 .to(Promise.<String>prepare());
 
         organizationId.get();
@@ -119,7 +119,7 @@ public final class CloudFoundryOperationsBuilder {
                         .flatMap(requestResources(cloudFoundryClient, space)))
                 .single()
                 .map(Resources.extractId())
-                .otherwise(Exceptions.<String>convert(String.format("Space %s does not exist", space)))
+                .otherwise(Exceptions.<String>convert("Space %s does not exist", space))
                 .to(Promise.<String>prepare());
 
         spaceId.get();
