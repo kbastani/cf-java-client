@@ -41,6 +41,7 @@ import org.cloudfoundry.operations.util.v2.Resources;
 import org.reactivestreams.Publisher;
 import reactor.Mono;
 import reactor.fn.Function;
+import reactor.fn.tuple.Tuple;
 import reactor.fn.tuple.Tuple2;
 import reactor.fn.tuple.Tuple4;
 import reactor.rx.Stream;
@@ -81,8 +82,33 @@ public final class DefaultApplications implements Applications {
                 .map(toApplication());
     }
 
-    private static String emptyNull(String s) {
-        return s == null ? "" : s;
+    @Override
+    public Mono<Void> push(PushApplicationRequest request) {
+        Validators
+                .validate(request)
+                .then(requestStackId(this.cloudFoundryClient));
+
+
+
+        // TODO
+        return null;
+    }
+
+    private static Function<PushApplicationRequest, Mono<Tuple2<Optional<String>, PushApplicationRequest>>> requestStackId(CloudFoundryClient cloudFoundryClient) {
+        return new Function<PushApplicationRequest, Mono<Tuple2<Optional<String>, PushApplicationRequest>>>() {
+
+            @Override
+            public Mono<Tuple2<Optional<String>, PushApplicationRequest>> apply(PushApplicationRequest pushApplicationRequest) {
+                String stack = pushApplicationRequest.getStack();
+
+                if(stack == null) {
+                    return Mono.just(Tuple.of(Optional.<String>empty(), pushApplicationRequest));
+                }
+
+                return null;
+            }
+
+        };
     }
 
     private static Function<GetSpaceSummaryResponse, Stream<SpaceApplicationSummary>> extractApplications() {
@@ -115,7 +141,7 @@ public final class DefaultApplications implements Applications {
     private static String getBuildpack(SummaryApplicationResponse response) {
         return Optional
                 .ofNullable(response.getBuildpack())
-                .orElse(emptyNull(response.getDetectedBuildpack()));
+                .orElse(response.getDetectedBuildpack());
     }
 
     private static Mono<ApplicationInstancesResponse> requestApplicationInstances(CloudFoundryClient cloudFoundryClient, String applicationId) {
