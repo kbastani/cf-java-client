@@ -470,8 +470,8 @@ public final class OrganizationsTest extends AbstractIntegrationTest {
 
                     return Mono.just(tuple.t1).and(this.cloudFoundryClient.organizations().associateUser(request));
                 })
-                .doOnSuccess(tuple -> {
-                    assertTrue("admin is not an associated user", Paginated
+                .then(tuple -> {
+                    Mono<Boolean> exists = Paginated
                             .requestResources(page -> {
                                 ListOrganizationUsersRequest request = ListOrganizationUsersRequest.builder()
                                         .page(page)
@@ -479,8 +479,8 @@ public final class OrganizationsTest extends AbstractIntegrationTest {
                                         .build();
                                 return this.cloudFoundryClient.organizations().listUsers(request);
                             })
-                            .exists(user -> Resources.getId(user).equals(tuple.t1))
-                            .get());
+                            .exists(user -> Resources.getId(user).equals(tuple.t1));
+                    return Mono.when(Mono.just(tuple.t1), Mono.just(tuple.t2), exists);
                 })
                 .then(tuple -> {
                     RemoveOrganizationUserRequest request = RemoveOrganizationUserRequest.builder()
@@ -488,9 +488,11 @@ public final class OrganizationsTest extends AbstractIntegrationTest {
                             .id(Resources.getId(tuple.t2))
                             .build();
 
-                    return this.cloudFoundryClient.organizations().removeUser(request);
+                    return this.cloudFoundryClient.organizations().removeUser(request)
+                            .map(response -> tuple.t3);
                 })
-                .subscribe(this.testSubscriber());
+                .subscribe(this.testSubscriber()
+                        .assertEquals(true));
     }
 
     @Test
