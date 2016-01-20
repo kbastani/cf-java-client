@@ -38,6 +38,9 @@ import org.cloudfoundry.utils.test.TestSubscriber;
 import org.springframework.core.io.ClassPathResource;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.cloudfoundry.client.v3.packages.CreatePackageRequest.PackageType.DOCKER;
 import static org.cloudfoundry.client.v3.packages.ListPackagesResponse.Resource;
 import static org.hamcrest.core.StringStartsWith.startsWith;
@@ -145,10 +148,13 @@ public final class SpringPackagesTest {
 
         @Override
         protected CreatePackageRequest getValidRequest() {
+            Map<String, String> data = new HashMap<String, String>();
+            data.put("image", "registry/image:latest");
             return CreatePackageRequest.builder()
                     .applicationId("test-application-id")
                     .type(DOCKER)
                     .url("docker://cloudfoundry/runtime-ci")
+                    .data(data)
                     .build();
         }
 
@@ -444,11 +450,15 @@ public final class SpringPackagesTest {
 
         @Override
         protected StagePackageRequest getValidRequest() {
+            Map<String, Object> lifecycle = new HashMap<>();
+            lifecycle.put("type", "docker");
+            lifecycle.put("data", new HashMap<>());
             return StagePackageRequest.builder()
                     .buildpack("http://github.com/myorg/awesome-buildpack")
                     .environmentVariable("CUSTOM_ENV_VAR", "hello")
                     .id("test-id")
                     .stack("cflinuxfs2")
+                    .lifecycle(lifecycle)
                     .build();
         }
 

@@ -24,6 +24,7 @@ import lombok.Singular;
 import org.cloudfoundry.client.Validatable;
 import org.cloudfoundry.client.ValidationResult;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -51,6 +52,15 @@ public final class CreateApplicationRequest implements Validatable {
     private final Map<String, String> environmentVariables;
 
     /**
+     * The lifecycle
+     *
+     * @param lifecycle the application lifecycle details
+     * @return the lifecycle details
+     */
+    @Getter(onMethod = @__(@JsonProperty("lifecycle")))
+    private final Map<String, Object> lifecycle;
+
+    /**
      * The name
      *
      * @param name the name
@@ -59,24 +69,30 @@ public final class CreateApplicationRequest implements Validatable {
     @Getter(onMethod = @__(@JsonProperty("name")))
     private final String name;
 
+
     /**
      * The space id
      *
      * @param spaceId the space id
      * @return the space id
      */
-    @Getter(onMethod = @__(@JsonProperty("space_guid")))
-    private final String spaceId;
+    @Getter(onMethod = @__(@JsonProperty("relationships")))
+    private final Map<String, Map<String, String>> relationships;
 
     @Builder
     CreateApplicationRequest(String buildpack,
                              @Singular Map<String, String> environmentVariables,
+                             Map<String, Object> lifecycle,
                              String name,
                              String spaceId) {
         this.buildpack = buildpack;
         this.environmentVariables = environmentVariables;
+        this.lifecycle = lifecycle;
         this.name = name;
-        this.spaceId = spaceId;
+        this.relationships = new HashMap<>();
+        Map<String, String> space = new HashMap<>();
+        space.put("guid", spaceId);
+        this.relationships.put("space", space);
     }
 
     @Override
@@ -87,8 +103,16 @@ public final class CreateApplicationRequest implements Validatable {
             builder.message("name must be specified");
         }
 
-        if (this.spaceId == null) {
-            builder.message("space id must be specified");
+        if (this.relationships == null) {
+            builder.message("relationship space id must be specified");
+        } else {
+            if(this.relationships.get("space") == null) {
+                builder.message("relationship space id must be specified");
+            } else {
+                if(this.relationships.get("space").get("guid") == null) {
+                    builder.message("relationship space id must be specified");
+                }
+            }
         }
 
         return builder.build();

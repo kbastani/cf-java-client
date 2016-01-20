@@ -3,5 +3,9 @@
   "environment_variables": {
     "CUSTOM_ENV_VAR": "hello"
   },
-  "stack": "cflinuxfs2"
+  "stack": "cflinuxfs2",
+  "lifecycle": {
+    "type": "docker",
+    "data": {}
+  }
 }

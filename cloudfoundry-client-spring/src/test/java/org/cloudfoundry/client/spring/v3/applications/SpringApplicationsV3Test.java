@@ -55,6 +55,8 @@ import org.cloudfoundry.client.v3.applications.UpdateApplicationResponse;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.cloudfoundry.client.v3.PaginatedAndSortedRequest.OrderBy.CREATED_AT;
 import static org.cloudfoundry.client.v3.PaginatedAndSortedRequest.OrderDirection.ASC;
@@ -202,11 +204,15 @@ public final class SpringApplicationsV3Test {
 
         @Override
         protected CreateApplicationRequest getValidRequest() throws Exception {
+            Map<String, Object> lifecycle = new HashMap<>();
+            lifecycle.put("type", "docker");
+            lifecycle.put("data", new HashMap<>());
             return CreateApplicationRequest.builder()
                     .name("my_app")
                     .spaceId("31627bdc-5bc4-4c4d-a883-c7b2f53db249")
                     .environmentVariable("open", "source")
                     .buildpack("name-410")
+                    .lifecycle(lifecycle)
                     .build();
         }
 

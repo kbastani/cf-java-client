@@ -87,19 +87,29 @@ public final class StagePackageRequest implements Validatable {
     @Getter(onMethod = @__(@JsonProperty("stack")))
     private final String stack;
 
+    /**
+     * The lifecycle
+     *
+     * @param lifecycle the application lifecycle details
+     * @return the lifecycle details
+     */
+    @Getter(onMethod = @__(@JsonProperty("lifecycle")))
+    private final Map<String, Object> lifecycle;
+
     @Builder
     StagePackageRequest(String buildpack,
                         Integer diskLimit,
                         @Singular Map<String, Object> environmentVariables,
                         String id,
                         Integer memoryLimit,
-                        String stack) {
+                        String stack, Map<String, Object> lifecycle) {
         this.buildpack = buildpack;
         this.diskLimit = diskLimit;
         this.environmentVariables = environmentVariables;
         this.id = id;
         this.memoryLimit = memoryLimit;
         this.stack = stack;
+        this.lifecycle = lifecycle;
     }
 
     @Override
